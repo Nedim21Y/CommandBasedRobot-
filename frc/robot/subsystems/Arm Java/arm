@@ -1,0 +1,70 @@
+package frc.robot.subsystems;
+
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.sensors.CANCoder;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.math.controller.PIDController;
+
+public class Arm extends SubsystemBase{
+    private final TalonFX mainLifterMotor = new TalonFX(15);
+    private final TalonFX secondLifterMotor = new TalonFX (20);
+
+    private final CANcoder armEncoder = new CANcoder(35);
+
+    private final double kP = 0.027;
+    private final double kI = 0.0;
+    private final double kD = 0.0;
+
+    private final PIDController armPID = new PIDController(kP, kI, kD);
+
+    // just theoretical 
+    private final double gearRatio = 1/ 150;
+    private final double offset = 1;
+   
+    public Arm() {
+      
+        mainLifterMotor.getSensorCollection().setIntegratedSensorPosition(0, 0);
+        secondLifterMotor.getSensorCollection().setIntegratedSensorPosition(0, 0);
+
+        armPID.setTolerance(1.0); 
+    
+        public void moveToAngle(double targetAngle) {
+            double currentAngle = getDegreesEncoder();
+        
+            double output = armPID.calculate(currentAngle, targetAngle);
+        
+            output = Math.max(-1.0, Math.min(1.0, output));
+        
+            mainLifterMotor.set(ControlMode.PercentOutput, output);
+            secondLifterMotor.set(ControlMode.PercentOutput, output);
+        
+            SmartDashboard.putNumber("Arm PID Output", output);
+            SmartDashboard.putNumber("Target Angle", targetAngle);
+        }
+    
+        public void moveMainLifter(double speed) {
+            mainLifterMotor.set(ControlMode.PercentOutput, 10);
+            secondLifterMotor.set(ControlMode.PercentOutput, 10);
+        }
+    
+        public void moveWrist(double speed) {
+            secondLifterMotor.set(ControlMode.PercentOutput, -10);
+            mainLifterMotor.set(ControlMode.PercentOutput, -10);
+        }
+    
+        public void stopAll() {
+            mainLifterMotor.set(ControlMode.PercentOutput, 0);
+            secondLifterMotor.set(ControlMode.PercentOutput, 0);
+        }
+    
+        public void getDegrresEncoder(){
+        
+            mainLifterMotor.getConfigurator().setPosition(0);
+            secondLifterMotor.getConfigurator().setPosition(0);
+    
+            public void periodic() {
+                SmartDashboard.putNumber("Arm Encoder Angle", getDegreesEncoder());
+        }
+    }
